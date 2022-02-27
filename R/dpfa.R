@@ -140,8 +140,8 @@ dpfa <- function(data,
     C_kk1 = out2[[1]]
     C_k1n = out2[[2]]
 
-    res=sample_Z(x_kn , p0, rk, Phi,W_time, sk, p1,C_k1n, numSample,ZZip)#Pi_k,
-    ZZip = res[[1]]
+    z_return=sample_Z(x_kn , p0, rk, Phi,W_time, sk, p1,C_k1n, numSample,ZZip)#Pi_k,
+    ZZip = z_return[[1]]
     #ZZip = matrix(1, nrow = K, ncol = numTotal) # this causes higher correlations
 
     Psi = matrix(NA,dim(x_pk)[1],dim(x_pk)[2])
