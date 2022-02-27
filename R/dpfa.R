@@ -207,7 +207,7 @@ dpfa <- function(data,
   }
 
   phi_est = apply(Phi.array,c(1,2),mean)
-  res$phi_est
+  res$phi_est = phi_est
 
   Theta.array <- array(NA,c(c(K,numTotal),(niter-burnin)))
   for(i in 1:(niter-burnin)){
