@@ -1,0 +1,197 @@
+dynamicPFA_Sim_Cond = function(true_dat_cond,init_cond_psi,init_con_phi,init_con_theta,init_con_W,init_con_H, K, N, M, numTime, niter, burnin){
+  # hyperparameters
+  hyp = 1;
+  alpha_psi = hyp;
+  p0 = 0.5;
+  p1 = 0.5;
+  rk_a = 100;
+  rk_b = 1/rk_a;
+  alpha_phi = 1
+  p1 = .5
+  sk_a = 1e5
+  sk_b=1/sk_a
+  a0 = 1; b0 = 1;
+  rk = rep(1,K)
+  sk = rgamma(K,sk_a)*sk_b
+  p0 = 0.5
+  p1 = 0.5
+  bias_0 = rep(2,K)
+  
+  #------------------- true data condition ------------------------
+  
+  if (true_dat_cond == 1){ # true_dat_cond = 2, H is randomly sampled in the true data
+    dat = true_data_Cond1(K, N, M, numTime)
+  } else if (true_dat_cond == 2){ # true_dat_cond = 1, H is all set as 1
+    dat = true_data_Cond2(K, N, M, numTime)
+  } else if (true_dat_cond ==3){ # approach 1: manipulate phi and W in a way that make H has very high probability of having 1
+    dat = true_data_Cond3(K, N, M, numTime)
+  }
+  
+  psi_tru = dat[[1]]
+  phi_tru = dat[[2]]
+  theta_tru = dat[[3]]
+  H_tru = dat[[4]]
+  w_tru = dat[[5]]
+  Xmtot = dat[[6]]
+  
+  numSample = N
+  numTotal = numSample*numTime
+  timeSelect = 1:numTime
+  timeSpan = c(diff(timeSelect),1)
+  
+  #------------------- initial values condition ------------------------
+  
+  #------ psi ------
+  if (init_cond_psi == 1){
+    psi_init = matrix(rgamma(M*K,shape=alpha_psi),M,K) #randg(alpha_psi,P,K)
+    for (i in 1:K){
+      psi_init[,i] = psi_init[,i]/sum(psi_init[,i])
+    }
+    psi_init = matrix(1/M,M,K)
+  } else if (init_cond_psi == 2){
+    psi_init = psi_tru
+  } else if (init_cond_psi == 3){
+    pca=prcomp(t(Xmtot))
+    psi_init = abs(pca$rotation[,1:3])
+    psi_init = psych::principal(t(Xmtot),3)$loadings
+    for (i in 1:K){
+    psi_init[,i] = as.numeric(psi_init[,i]/sum(psi_init[,i]))
+    }
+  }
+  
+  #------ phi ------
+  if (init_con_phi ==1){
+    K1 = K
+    K2 = K
+    phi_init = matrix(rgamma(K1*K2,shape=alpha_phi),K1,K2) #randg(alpha_psi,P,K)
+    for (i in 1:K2){
+      phi_init[,i] = phi_init[,i]/sum(phi_init[,i])
+    }
+  } else if (init_con_phi ==2){
+    phi_init = phi_tru
+  } 
+  
+  #------ W ------
+  if (init_con_W ==1){
+    W_init<-array(dim=c(K,numTotal))
+    for (n in 1:numTotal){
+      for (k in 1:K){
+        W_init[k,n] = rgamma(1,3,0.5)
+      }
+    }
+  } else if (init_con_W ==2){
+    W_init = w_tru
+  } 
+  
+  #------ theta ------
+  if (init_con_theta ==1){
+    theta_init<-array(dim=c(K,numTotal))
+    for (n in 1:numTotal){
+      for (k in 1:K){
+        theta_init[k,n] = rgamma(1,3,0.5)
+      }
+    }
+  } else if (init_con_theta ==2){
+    theta_init = theta_tru
+  } 
+  
+  #------ H ------
+  if (init_con_H ==1){
+    H_init<-array(rbinom(numSample*numTime,1, 0.5),dim=c(K,numTotal))
+  } else if (init_con_H ==2){
+    H_init = H_tru
+  } else if (init_con_H ==3){
+    H_init = array(1, dim=c(K,numTotal))
+  }
+  
+  inits = list(psi_init, phi_init, theta_init, W_init, H_init)
+  
+  #------------------- ------------------------------------------
+  
+  #------------------- run dynamicPFA_2.R for each condition ------------------------
+  
+  
+  rett = dynamicPFA_2(dat,inits, K, N, M, numTime, niter, burnin)
+  
+  #------------------- analyze results for each condition ------------------------
+  
+  psi.array <- array(NA,c(dim(psi_tru),(niter-burnin)))
+  
+  for(i in 1:(niter-burnin)){
+    psi.array[,,i] <- rett[[i+burnin]]$Psi
+  }
+  sum.psi <- matrix(0,dim(psi_tru)[1],dim(psi_tru)[2])
+  
+  for(i in 1:(niter-burnin)){
+    sum.psi <- sum.psi + psi.array[,,i]
+  }
+  psi_est = round(sum.psi/(niter-burnin),2)
+  
+  
+  Phi.array <- array(NA,c(dim(phi_tru),(niter-burnin)))
+  for(i in 1:(niter-burnin)){
+    Phi.array[,,i] <- rett[[burnin+i]]$Phi
+  }
+  sum.Phi <- matrix(0,dim(phi_tru)[1],dim(phi_tru)[2])
+  
+  for(i in 1:(niter-burnin)){
+    sum.Phi <- sum.Phi + Phi.array[,,i]
+  }
+  
+  phi_est = round(sum.Phi/(niter-burnin),3)
+  
+  
+  Theta.array <- array(NA,c(dim(theta_tru),(niter-burnin)))
+  for(i in 1:(niter-burnin)){
+    Theta.array[,,i] <- rett[[burnin+i]]$Theta
+  }
+  sum.Theta <- matrix(0,dim(theta_tru)[1],dim(theta_tru)[2])
+  
+  for(i in 1:(niter-burnin)){
+    sum.Theta <- sum.Theta + Theta.array[,,i]
+  }
+  
+  theta_est = round(sum.Theta/(niter-burnin),3)
+  
+  W.array <- array(NA,c(dim(rett[[niter]]$W),(niter-burnin)))
+  for(i in 1:(niter-burnin)){
+    W.array[,,i] <- rett[[burnin+i]]$W
+  }
+  mean.W <- matrix(0,dim(rett[[niter]]$W)[1],dim(rett[[niter]]$W)[2])
+  
+  for(i in 1:(niter-burnin)){
+    mean.W <- mean.W + W.array[,,i]
+  }
+  
+  W_est = round(mean.W/(niter-burnin),3)
+  
+  ZZip.array <- array(NA,c(dim(rett[[niter]]$ZZip),(niter-burnin)))
+  for(i in 1:(niter-burnin)){
+    ZZip.array[,,i] <- rett[[burnin+i]]$ZZip
+  }
+  mean.ZZip <- matrix(0,dim(rett[[niter]]$ZZip)[1],dim(rett[[niter]]$ZZip)[2])
+  
+  for(i in 1:(niter-burnin)){
+    mean.ZZip <- mean.ZZip + ZZip.array[,,i]
+  }
+  
+  ZZip_est = round(mean.ZZip/(niter-burnin),3)
+  ZZip_rowsums = rowSums(ZZip_est)
+  
+  
+  
+  # relative bias
+  psi_est_bias = bias(as.vector(psi_est),as.vector(psi_tru), abs = T)
+  phi_est_bias = bias(as.vector(phi_est),as.vector(phi_tru), abs = T)
+  
+  # factor congruence
+  psi_cong = factor.congruence(psi_est,psi_tru)
+
+  # DIC score
+  #fit_DIC_score = fit_DIC(rett, K, N, numTime, M)
+  
+  return<- list(psi_est,phi_est,theta_est,W_est,ZZip_est,
+                ZZip_rowsums,psi_est_bias,phi_est_bias,psi_cong,psi_tru,
+                phi_tru, theta_tru, H_tru,w_tru, Xmtot)
+  }
+
