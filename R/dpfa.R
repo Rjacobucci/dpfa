@@ -157,10 +157,11 @@ dpfa <- function(data,
 
     Theta = calcTheta(rk, ZZip, x_kn, p0)
 
-    Phi = matrix(NA,dim(x_pk)[2],dim(x_pk)[2])
-    for (i in 1:dim(x_pk)[2]){
-      Phi[,i] <-  rdirichlet(1,(alpha_psi+C_kk1)[,i])
-    }
+    #Phi = matrix(NA,dim(x_pk)[2],dim(x_pk)[2])
+    #for (i in 1:dim(x_pk)[2]){
+     # Phi[,i] <-  rdirichlet(1,(alpha_psi+C_kk1)[,i])
+      Phi <- rdirichlet(3,alpha_phi+C_kk1)
+    #}
 
     Lk = crt_cpp(C_k1n,sk)
     sumbpi = rowSums(ZZip) * log(1-p0)

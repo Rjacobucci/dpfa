@@ -1,9 +1,9 @@
 Package: dpfa
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.0.2
+Version: 0.0.3
 Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
+Maintainer: Ross Jacobucci <rcjacobuc@gmail.com>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: GPL (>= 2)
