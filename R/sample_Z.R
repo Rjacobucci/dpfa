@@ -7,7 +7,7 @@ sample_Z = function(x_kn ,
                     sk,
                     p1,
                     C_k1n,
-                    #Pi_k,
+                    Pi_k,
                     numSample,
                     ZZip){
 
@@ -26,11 +26,15 @@ sample_Z = function(x_kn ,
   ind = which(C_k1n == 0 & x_kn ==0,arr.ind=T)
   rix = ind[,1];cix=ind[,2]
 
+
+
   p_1 = Pi[lix]*(( 1 - p0 )^rk[rix]) * ((1-p1)^sk[rix])
   p_0 = 1 - Pi[rix]
   ZZip = matrix(1, nrow = K, ncol = ncol(x_kn))
   #ZZip[lix] =  rbern(length(lix),.1)#((p_1/( p_1 + p_0 ) ) > runif(length(rix)))*1
   ZZip[lix] =  ((p_1/( p_1 + p_0 ) ) > runif(length(rix)))*1
+
+  #print(((p_1/( p_1 + p_0 ) ) > runif(length(rix)))*1)
   pZZip = matrix(1,nrow(x_kn),ncol(x_kn));
   pZZip[lix] =  (p_1/( p_1 + p_0 ) )
 

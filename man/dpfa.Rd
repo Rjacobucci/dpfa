@@ -11,7 +11,7 @@ dpfa(
   M,
   numTime,
   niter = 5000,
-  burnin = 2000,
+  burnin = floor(niter/2),
   init_con = 1,
   init_con_H = 3,
   alpha_psi = 1,

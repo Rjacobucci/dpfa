@@ -45,7 +45,7 @@ dpfa <- function(data,
                  M,
                  numTime,
                  niter=5000,
-                 burnin=2000,
+                 burnin=floor(niter/2),
                  init_con=1,
                  init_con_H=3,
                  alpha_psi=1,
@@ -59,6 +59,8 @@ dpfa <- function(data,
                  a0 = 1,
                  b0 = 1,
                  verbose=T){ # inits
+
+
 
   Xmtot = data
   numSample = N
@@ -140,7 +142,10 @@ dpfa <- function(data,
     C_kk1 = out2[[1]]
     C_k1n = out2[[2]]
 
-    z_return=sample_Z(x_kn , p0, rk, Phi,W_time, sk, p1,C_k1n, numSample,ZZip)#Pi_k,
+    #Pi_k = matrix(rbeta(K,a0,b0),K,1)
+    Pi_k = rbeta(K,shape1 = a0 + rowSums(ZZip),shape2=b0 + numTotal*numTime - rowSums(ZZip));
+
+    z_return=sample_Z(x_kn , p0, rk, Phi,W_time, sk, p1,C_k1n, numSample,Pi_k,ZZip)#Pi_k,
     ZZip = z_return[[1]]
     #ZZip = matrix(1, nrow = K, ncol = numTotal) # this causes higher correlations
 
@@ -169,7 +174,7 @@ dpfa <- function(data,
     W = calcW(sk, ZZip, C_k1n, 0.5)
 
     # Pi_k = rbeta(K,shape1 = a0 + rowSums(ZZip),shape2=b0 + numTotal*numTime - rowSums(ZZip));
-    # Pi_k = matrix(rbeta(K*numTotal,a0,b0),K,numTotal)
+
     #theta = matrix(rgamma(rk*ZZip+ x_kn),dim(x_kn)) * p0;# from code
     #theta = matrix(rgamma(matrix(rk,K,numTotal) + x_kn,1),dim(x_kn)) # from paper
 
@@ -192,6 +197,7 @@ dpfa <- function(data,
   # --------------------------
 
   #------------------- analyze results for each condition ------------------------
+
 
   Psi.array <- array(NA,dim=c(M,K,(niter-burnin)))
 
@@ -232,7 +238,7 @@ dpfa <- function(data,
     ZZip.array[,,i] <- rett[[i]]$ZZip
   }
 
-  ZZip_est = apply(ZZip.array,c(1,2),mean)
+  ZZip_est = apply(ZZip.array,c(1,2),mode)
   res$ZZip_est = ZZip_est
   ZZip_rowsums = rowSums(ZZip_est)
   res$ZZip_rowsums = ZZip_rowsums
