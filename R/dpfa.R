@@ -138,6 +138,8 @@ dpfa <- function(data,
     C_kn <- calcC_kn(ZZip_3D, bias_0, W_3D, Phi)
     C_kn = matrix(C_kn, nrow=K)
 
+    #print(C_kn[,1:10])
+
     out2 = mult_cpp(C_kn,Phi,W, ZZip)
     C_kk1 = out2[[1]]
     C_k1n = out2[[2]]
@@ -171,6 +173,7 @@ dpfa <- function(data,
     Lk = crt_cpp(C_k1n,sk)
     sumbpi = rowSums(ZZip) * log(1-p0)
     sk = rgamma(K, sk_a + Lk)/( 1/sk_b - sumbpi); # from code
+    #print(sk);print(C_k1n[,1:10])
     W = calcW(sk, ZZip, C_k1n, 0.5)
 
     # Pi_k = rbeta(K,shape1 = a0 + rowSums(ZZip),shape2=b0 + numTotal*numTime - rowSums(ZZip));
@@ -238,7 +241,12 @@ dpfa <- function(data,
     ZZip.array[,,i] <- rett[[i]]$ZZip
   }
 
-  ZZip_est = apply(ZZip.array,c(1,2),mode)
+  Mode <- function(x) {
+    ux <- unique(x)
+    ux[which.max(tabulate(match(x, ux)))]
+  }
+
+  ZZip_est = apply(ZZip.array,c(1,2),Mode)
   res$ZZip_est = ZZip_est
   ZZip_rowsums = rowSums(ZZip_est)
   res$ZZip_rowsums = ZZip_rowsums
