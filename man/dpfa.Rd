@@ -24,6 +24,8 @@ dpfa(
   sk_b = 1/sk_a,
   a0 = 1,
   b0 = 1,
+  bias_init = 1,
+  rk_init = 1,
   verbose = T
 )
 }
@@ -65,6 +67,10 @@ dpfa(
 \item{a0}{fill in}
 
 \item{b0}{fill in}
+
+\item{bias_init}{fill in}
+
+\item{rk_init}{fill in}
 
 \item{verbose}{Print progress bar?}
 }

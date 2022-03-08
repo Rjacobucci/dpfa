@@ -15,7 +15,8 @@ init_vals <- function(M,
                       psi_tru,
                       w_tru,
                       H_tru,
-                      theta_tru){
+                      theta_tru,
+                      rk_vec){
 
   #------ psi ------
   if (init_con_psi == 1){
@@ -56,7 +57,7 @@ init_vals <- function(M,
     W_init<-array(dim=c(K,numTotal))
     for (n in 1:numTotal){
       for (k in 1:K){
-        W_init[k,n] = rgamma(1,3,0.5)
+        W_init[k,n] = rgamma(1,rk_vec[k],0.5)
       }
     }
   } else if (init_con_W ==2){
@@ -68,7 +69,7 @@ init_vals <- function(M,
     theta_init<-array(dim=c(K,numTotal))
     for (n in 1:numTotal){
       for (k in 1:K){
-        theta_init[k,n] = rgamma(1,3,0.5)
+        theta_init[k,n] = rgamma(1,rk_vec[k],0.5)
       }
     }
   } else if (init_con_theta ==2){

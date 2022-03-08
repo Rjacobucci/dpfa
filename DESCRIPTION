@@ -1,7 +1,7 @@
 Package: dpfa
 Type: Package
 Title: What the Package Does (Title Case)
-Version: 0.0.3
+Version: 0.0.4
 Author: Who wrote it
 Maintainer: Ross Jacobucci <rcjacobuc@gmail.com>
 Description: More about what it does (maybe more than one line)

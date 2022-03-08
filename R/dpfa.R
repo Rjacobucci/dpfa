@@ -21,6 +21,10 @@
 #' @param sk_b fill in
 #' @param a0  fill in
 #' @param b0  fill in
+#' @param bias_init fill in
+#' @param rk_init fill in
+#' @param W_true fill in
+#' @param H_true fill in
 #' @param verbose Print progress bar?
 #' @return phi_est
 #' @return psi_est
@@ -58,7 +62,11 @@ dpfa <- function(data,
                  sk_b=1/sk_a,
                  a0 = 1,
                  b0 = 1,
-                 verbose=T){ # inits
+                 bias_init=1,
+                 rk_init=1,
+                 verbose=T,
+                 W_true,
+                 H_true){ # inits
 
 
 
@@ -69,9 +77,9 @@ dpfa <- function(data,
   timeSpan = c(diff(timeSelect),1)
 
   # hyperparameters
-  rk = rep(1,K)
+  rk = rep(rk_init,K)
   sk = rgamma(K,sk_a)*sk_b
-  bias_0 = rep(1,K)
+  bias_0 = rep(bias_init,K)
 
   res <- list()
 
@@ -94,7 +102,8 @@ dpfa <- function(data,
                         init_con_phi=init_con,
                         init_con_W=init_con,
                         init_con_theta=init_con,
-                        init_con_H)#,
+                        init_con_H,
+                        rk_vec=rk)#,
                        # phi_tru,
                        # psi_tru,
                         #w_tru,
@@ -106,11 +115,12 @@ dpfa <- function(data,
   W_init = inits[[4]]
   H_init = inits[[5]]
 
+
   Psi = psi_init
   Phi = phi_init
   Theta = theta_init
-  W = W_init
-  ZZip = H_init
+  W = W_true #W_init
+  ZZip = H_true #H_init
   #ZZip = matrix(1, nrow = K, ncol = numTotal)
 
   #z0 = matrix(1,K,numSample)
@@ -130,13 +140,15 @@ dpfa <- function(data,
       setTxtProgressBar(pb, b)
     }
 
-    W_time = sweep(W,2,timeSpan,'/')
+    # W_time = sweep(W,2,timeSpan,'/') -- only needed when non-equidistant time spacing
 
 
-    W_3D = matrix_to_array(W_time, K, numSample,numTime)
+    W_3D = matrix_to_array(W, K, numSample,numTime)
     ZZip_3D = matrix_to_array(ZZip,K, numSample,numTime)
     C_kn <- calcC_kn(ZZip_3D, bias_0, W_3D, Phi)
     C_kn = matrix(C_kn, nrow=K)
+
+    #print(cor(t(C_kn)))
 
     #print(C_kn[,1:10])
 
@@ -144,11 +156,14 @@ dpfa <- function(data,
     C_kk1 = out2[[1]]
     C_k1n = out2[[2]]
 
+    print(C_kk1)
+
     #Pi_k = matrix(rbeta(K,a0,b0),K,1)
     Pi_k = rbeta(K,shape1 = a0 + rowSums(ZZip),shape2=b0 + numTotal*numTime - rowSums(ZZip));
 
     z_return=sample_Z(x_kn , p0, rk, Phi,W_time, sk, p1,C_k1n, numSample,Pi_k,ZZip)#Pi_k,
-    ZZip = z_return[[1]]
+    #ZZip = z_return[[1]]
+    ZZip = H_true
     #ZZip = matrix(1, nrow = K, ncol = numTotal) # this causes higher correlations
 
     Psi = matrix(NA,dim(x_pk)[1],dim(x_pk)[2])
@@ -168,15 +183,20 @@ dpfa <- function(data,
     #for (i in 1:dim(x_pk)[2]){
      # Phi[,i] <-  rdirichlet(1,(alpha_psi+C_kk1)[,i])
       Phi <- rdirichlet(3,alpha_phi+C_kk1)
+     # print(Phi)
     #}
 
     Lk = crt_cpp(C_k1n,sk)
-    print(C_k1n[,1:5])
+    #print(C_k1n[,1:5])
     sumbpi = rowSums(ZZip) * log(1-p0)
     sk = rgamma(K, sk_a + Lk)/( 1/sk_b - sumbpi); # from code
 
     #print(sk);print(C_k1n[,1:10])
-    W = calcW(sk, ZZip, C_k1n, 0.5)
+
+    # !!!!!
+    #W = calcW(sk, ZZip, C_k1n, 0.5)
+    W = W_true
+
 
     # Pi_k = rbeta(K,shape1 = a0 + rowSums(ZZip),shape2=b0 + numTotal*numTime - rowSums(ZZip));
 
