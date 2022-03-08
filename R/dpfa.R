@@ -34,7 +34,7 @@
 #' @import RcppArmadillo
 #' @import psych
 #' @import extraDistr
-#' @importFrom stats na.omit rgamma runif prcomp rbinom
+#' @importFrom stats na.omit rgamma runif prcomp rbinom rbeta
 #' @importFrom utils setTxtProgressBar txtProgressBar
 #' @export
 
@@ -171,8 +171,10 @@ dpfa <- function(data,
     #}
 
     Lk = crt_cpp(C_k1n,sk)
+    print(C_k1n[,1:5])
     sumbpi = rowSums(ZZip) * log(1-p0)
     sk = rgamma(K, sk_a + Lk)/( 1/sk_b - sumbpi); # from code
+
     #print(sk);print(C_k1n[,1:10])
     W = calcW(sk, ZZip, C_k1n, 0.5)
 
