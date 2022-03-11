@@ -119,9 +119,9 @@ dpfa_noW <- function(data,
 
 
   Psi = psi_true#psi_init
-  Phi = phi_true#phi_init
+  Phi = phi_init
   Theta = theta_true#theta_init
-  ZZip = H_init
+  ZZip = H_true#H_init
   #ZZip = matrix(1, nrow = K, ncol = numTotal)
 
   #z0 = matrix(1,K,numSample)
@@ -170,8 +170,8 @@ dpfa_noW <- function(data,
     Pi_k = rbeta(K,shape1 = a0 + rowSums(ZZip),shape2=b0 + numTotal*numTime - rowSums(ZZip));
 
     z_return=sample_Z(x_kn , p0, rk, Phi,Theta, sk, p1,C_k1n, numSample,Pi_k,ZZip)#Pi_k,
-    ZZip = z_return[[1]]
-    #ZZip = H_true
+    #ZZip = z_return[[1]]
+    ZZip = H_true
     #ZZip = matrix(1, nrow = K, ncol = numTotal) # this causes higher correlations
 
     Psi = matrix(NA,dim(x_pk)[1],dim(x_pk)[2])
@@ -192,7 +192,7 @@ dpfa_noW <- function(data,
     #Phi = matrix(NA,dim(x_pk)[2],dim(x_pk)[2])
     #for (i in 1:dim(x_pk)[2]){
      # Phi[,i] <-  rdirichlet(1,(alpha_psi+C_kk1)[,i])
-      Phi <- phi_true#rdirichlet(3,alpha_phi+C_kk1)
+      Phi <- rdirichlet(3,alpha_phi+C_kk1)
      # print(Phi)
     #}
 
