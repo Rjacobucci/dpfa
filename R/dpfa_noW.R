@@ -23,7 +23,6 @@
 #' @param b0  fill in
 #' @param bias_init fill in
 #' @param rk_init fill in
-#' @param W_true fill in
 #' @param H_true fill in
 #' @param phi_true fill in
 #' @param theta_true fill in
@@ -31,7 +30,6 @@
 #' @param verbose Print progress bar?
 #' @return phi_est
 #' @return psi_est
-#' @return W_est
 #' @return theta_est
 #' @return ZZip_est
 #' @return ZZip_rowsums
@@ -46,7 +44,7 @@
 #' @export
 
 
-dpfa <- function(data,
+dpfa_noW <- function(data,
                  K,
                  N,
                  M,
@@ -68,7 +66,6 @@ dpfa <- function(data,
                  bias_init=1,
                  rk_init=1,
                  verbose=T,
-                 W_true,
                  H_true,
                  phi_true,
                  theta_true,
@@ -118,15 +115,13 @@ dpfa <- function(data,
   psi_init = inits[[1]]
   phi_init = inits[[2]]
   theta_init = inits[[3]]
-  W_init = inits[[4]]
   H_init = inits[[5]]
 
 
-  Psi = psi_init
-  Phi = phi_init
-  Theta = theta_init
-  W = W_init
-  ZZip = H_true#H_init
+  Psi = psi_true#psi_init
+  Phi = phi_true#phi_init
+  Theta = theta_true#theta_init
+  ZZip = H_init
   #ZZip = matrix(1, nrow = K, ncol = numTotal)
 
   #z0 = matrix(1,K,numSample)
@@ -152,12 +147,12 @@ dpfa <- function(data,
       setTxtProgressBar(pb, b)
     }
 
-     W_time = sweep(W,2,timeSpan,'/') #-- only needed when non-equidistant time spacing
+     #W_time = sweep(W,2,timeSpan,'/') #-- only needed when non-equidistant time spacing
 
 
-    W_3D = matrix_to_array(W_time, K, numSample,numTime)
+    Theta_3D = matrix_to_array(Theta, K, numSample,numTime)
     ZZip_3D = matrix_to_array(ZZip,K, numSample,numTime)
-    C_kn <- calcC_kn(ZZip_3D, bias_0, W_3D, Phi)
+    C_kn <- calcC_kn(Theta_3D, bias_0, Theta_3D, Phi)
     C_kn = matrix(C_kn, nrow=K,byrow=F) # was byrow=F
 
    # print(cor(t(C_kn)))
@@ -165,7 +160,7 @@ dpfa <- function(data,
     #print(C_kn[,1:10])
    # print(summary(t(C_kn)))
 
-    out2 = mult_cpp(C_kn,Phi,W, ZZip)
+    out2 = mult_cpp(C_kn,Phi,Theta, ZZip)
     C_kk1 = out2[[1]]
     C_k1n = out2[[2]]
 
@@ -174,16 +169,16 @@ dpfa <- function(data,
     #Pi_k = matrix(rbeta(K,a0,b0),K,1)
     Pi_k = rbeta(K,shape1 = a0 + rowSums(ZZip),shape2=b0 + numTotal*numTime - rowSums(ZZip));
 
-    z_return=sample_Z(x_kn , p0, rk, Phi,W_time, sk, p1,C_k1n, numSample,Pi_k,ZZip)#Pi_k,
-   # ZZip = z_return[[1]]
-    ZZip = H_true
+    z_return=sample_Z(x_kn , p0, rk, Phi,Theta, sk, p1,C_k1n, numSample,Pi_k,ZZip)#Pi_k,
+    ZZip = z_return[[1]]
+    #ZZip = H_true
     #ZZip = matrix(1, nrow = K, ncol = numTotal) # this causes higher correlations
 
     Psi = matrix(NA,dim(x_pk)[1],dim(x_pk)[2])
     for (i in 1:dim(x_pk)[2]){
       Psi[,i] <-  rdirichlet(1,(alpha_psi+x_pk)[,i])
     }
-   # Psi = psi_true
+    Psi = psi_true
 
     # chinese restaurant table distribution
     Lk = crt_cpp(x_kn,rk)
@@ -192,12 +187,12 @@ dpfa <- function(data,
     rk = rgamma(K, rk_a + Lk)/( rk_b - sumbpi); # from code
 
 
-    Theta = calcTheta(rk, ZZip, x_kn, p0) # rk not the issue, tried rep(1,K) -- x_kn must be issue
+    Theta = theta_true#calcTheta(rk, ZZip, x_kn, p0) # rk not the issue, tried rep(1,K) -- x_kn must be issue
 
     #Phi = matrix(NA,dim(x_pk)[2],dim(x_pk)[2])
     #for (i in 1:dim(x_pk)[2]){
      # Phi[,i] <-  rdirichlet(1,(alpha_psi+C_kk1)[,i])
-      Phi <- rdirichlet(3,alpha_phi+C_kk1)
+      Phi <- phi_true#rdirichlet(3,alpha_phi+C_kk1)
      # print(Phi)
     #}
 
@@ -209,8 +204,8 @@ dpfa <- function(data,
     #print(sk);print(C_k1n[,1:10])
 
     # !!!!!
-    W = calcW(sk, ZZip, C_k1n, .5)
-    #W = W_true
+    #W = calcW(sk, ZZip, C_k1n, .5)
+   # W = W_true
 
 
     # Pi_k = rbeta(K,shape1 = a0 + rowSums(ZZip),shape2=b0 + numTotal*numTime - rowSums(ZZip));
@@ -226,7 +221,7 @@ dpfa <- function(data,
 
     if(b > burnin){
       count = count + 1
-      rett[[count]] <- list(Theta=Theta,Lk=Lk,Psi=Psi,rk=rk, Phi = Phi,  sumbpi = sumbpi, W = W, x_kn = x_kn, ZZip = ZZip,#Xmtot = Xmtot,
+      rett[[count]] <- list(Theta=Theta,Lk=Lk,Psi=Psi,rk=rk, Phi = Phi,  sumbpi = sumbpi, x_kn = x_kn, ZZip = ZZip,#Xmtot = Xmtot,
                         C_kn = C_kn, C_k1n = C_k1n, C_kk1=C_kk1)
     }
   }
@@ -264,13 +259,6 @@ dpfa <- function(data,
   theta_est = apply(Theta.array,c(1,2),mean)
   res$theta_est = theta_est
 
-  W.array <- array(NA,c(dim(rett[[1]]$W),(niter-burnin)))
-  for(i in 1:(niter-burnin)){
-    W.array[,,i] <- rett[[i]]$W
-  }
-
-  W_est = apply(W.array,c(1,2),mean)
-  res$W_est = W_est
 
 
   ZZip.array <- array(NA,c(dim(rett[[1]]$ZZip),(niter-burnin)))
@@ -289,7 +277,7 @@ dpfa <- function(data,
   res$ZZip_rowsums = ZZip_rowsums
 
   res$call <- match.call()
-  class(res) <- "dpfa"
+  class(res) <- "dpfa_noW"
   return(res)
 }
 
