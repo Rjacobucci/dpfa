@@ -119,7 +119,7 @@ dpfa_noW <- function(data,
 
 
   Psi = psi_true#psi_init
-  Phi = phi_init
+  Phi = phi_true#phi_init
   Theta = theta_true#theta_init
   ZZip = H_true#H_init
   #ZZip = matrix(1, nrow = K, ncol = numTotal)
@@ -152,10 +152,22 @@ dpfa_noW <- function(data,
 
     Theta_3D = matrix_to_array(Theta, K, numSample,numTime)
     ZZip_3D = matrix_to_array(ZZip,K, numSample,numTime)
-    C_kn <- calcC_kn(Theta_3D, bias_0, Theta_3D, Phi)
-    C_kn = matrix(C_kn, nrow=K,byrow=F) # was byrow=F
+    #one.array = array(1,dim(Theta_3D))
 
-   # print(cor(t(C_kn)))
+   # C_kn <- calcC_kn(ZZip_3D, bias_0, Theta_3D, Phi)
+
+  #  C_kn = matrix(C_kn, nrow=K,byrow=F) # was byrow=F -- checked, is correct
+
+    C_kn = matrix(NA,K,ncol(ZZip))
+    for(i in 1:ncol(ZZip)){
+      for(k in 1:K){
+        C_kn[k,i] = rpois(1,bias_0[k] + Phi[k,] %*% Theta[,i]) # not sure if this is the right truncated poisson
+      }
+    }
+
+
+    #print(t(C_kn)[1:30,])
+    #print(cor(t(C_kn)[1:30,],t(C_kn)[31:60,]))
 
     #print(C_kn[,1:10])
    # print(summary(t(C_kn)))
@@ -164,7 +176,7 @@ dpfa_noW <- function(data,
     C_kk1 = out2[[1]]
     C_k1n = out2[[2]]
 
-   # print(C_kk1/rowSums(C_kk1))
+    #print(C_kk1/rowSums(C_kk1))
 
     #Pi_k = matrix(rbeta(K,a0,b0),K,1)
     Pi_k = rbeta(K,shape1 = a0 + rowSums(ZZip),shape2=b0 + numTotal*numTime - rowSums(ZZip));

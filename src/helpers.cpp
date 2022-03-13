@@ -49,8 +49,8 @@ arma::Cube<int> calcC_kn(arma::Cube<int> ZZip_3D, arma::vec bias_0, arma::Cube<i
         } else if (ZZip_3D(k, 0, n) == 1){
           auto w1 = W_3D.slice(n);
           auto z2 = ZZip_3D.slice(n);
-          arma::mat ret = Phi * (w1.col(t-1) % z2.col(t-1)); // tried removing t-1
-          C_kn(k, t, n) = rztpois_single(ret(k) * bias_0(k)); //tried removing bias
+          arma::mat ret = Phi * (w1.col(t-1) % z2.col(t-1));
+          C_kn(k, t, n) = rztpois_single(ret(k) * bias_0(k));
         }
       }
     }
